@@ -1,0 +1,58 @@
+{
+  "expo": {
+    "name": "JEKA AOPS",
+    "slug": "jeka-aops-mobile",
+    "version": "0.2.0",
+    "scheme": "jekaaops",
+    "orientation": "portrait",
+    "icon": "./assets/jeka-aops-app-icon-1024.png",
+    "userInterfaceStyle": "dark",
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "JEKA AOPS koristi kameru za snimanje prometnih scena.",
+          "microphonePermission": "JEKA AOPS koristi mikrofon za snimanje zvuka prometa.",
+          "recordAudioAndroid": true,
+          "barcodeScannerEnabled": false
+        }
+      ],
+      "expo-video",
+      "expo-audio",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "JEKA AOPS koristi lokaciju samo za povezivanje snimke s mjestom snimanja."
+        }
+      ],
+      "expo-asset",
+      "expo-sharing",
+      "expo-status-bar"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.chevcellios.jekaaops",
+      "adaptiveIcon": {
+        "backgroundColor": "#07131A",
+        "foregroundImage": "./assets/jeka-aops-app-icon-1024.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "0e203876-7b52-4477-add8-2af1bd36fd96"
+      }
+    }
+  }
+}
