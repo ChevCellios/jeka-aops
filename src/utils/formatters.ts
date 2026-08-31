@@ -25,7 +25,7 @@ export function noiseLabel(dbfs?: number) {
 export function formatLocation(location?: CaptureLocation) {
   if (!location) return 'Lokacija nije dostupna';
   const accuracy = location.accuracyMeters ? ` ±${Math.round(location.accuracyMeters)} m` : '';
-  return `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}${accuracy}`;
+  return `${location.latitude.toFixed(3)}, ${location.longitude.toFixed(3)}${accuracy}`;
 }
 
 export function analysisLabel(analysis?: SessionAnalysis, progress?: string) {

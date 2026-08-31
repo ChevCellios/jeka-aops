@@ -2,7 +2,7 @@ import { extractEvidenceFrames, extractEvidenceFramesAtTimes } from './evidenceF
 import * as FileSystem from 'expo-file-system/legacy';
 import { rankVehicleEvidenceFrames } from './frameRanking';
 import { trackVehicles } from './tracking';
-import { detectVehiclesInFrames } from './vehicleDetectionModel';
+import { detectVehiclesInFrames, vehicleDetectionAvailable } from './vehicleDetectionModel';
 import type { AnalysisReport, NoiseSample } from './types';
 import { prepareVehicleAnalysis } from './vehicleAnalysis';
 
@@ -56,6 +56,15 @@ function denseVehicleTimes(detections: Awaited<ReturnType<typeof detectVehiclesI
 
 /** Entry point for post-recording processing; later AI stages live here. */
 export async function beginAutomaticAnalysis(sessionUri: string, sessionId: string, durationSeconds: number, noiseSamples: NoiseSample[] = [], onProgress?: (progress: AnalysisProgress) => void): Promise<SessionAnalysis> {
+  if (!vehicleDetectionAvailable) {
+    const result = await prepareVehicleAnalysis(sessionUri, [], noiseSamples);
+    return {
+      status: 'ready-for-model',
+      updatedAt: new Date().toISOString(),
+      note: 'Snimka je spremljena. Model detekcije nije uključen u ovu javnu verziju aplikacije.',
+      report: result.report,
+    };
+  }
   let generatedFrames: AnalysisReport['evidenceFrames'] = [];
   let retainedFrames: AnalysisReport['evidenceFrames'] = [];
   try {

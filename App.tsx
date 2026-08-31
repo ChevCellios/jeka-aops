@@ -51,7 +51,7 @@ function VehicleAnalysisSheet({ session, onClose, onRequestAnalysis }: { session
           <View style={styles.playerHeader}>
             <View>
               <Text style={styles.playerTitle}>Analiza vozila</Text>
-              <Text style={styles.analysisSubtitle}>Lokalna obrada na ureÄ‘aju</Text>
+              <Text style={styles.analysisSubtitle}>Lokalna obrada na uređaju</Text>
             </View>
             <Pressable accessibilityLabel="Zatvori analizu" onPress={onClose} style={styles.closeButton}>
               <Text style={styles.closeButtonText}>Zatvori</Text>
@@ -62,29 +62,31 @@ function VehicleAnalysisSheet({ session, onClose, onRequestAnalysis }: { session
             <View style={styles.analysisFlow}>
               <Text style={styles.analysisStep}>1. Odabrana videosesija</Text>
               <Text style={styles.analysisStep}>2. Ekstrakcija kadrova</Text>
-              <Text style={styles.analysisStep}>3. Detekcija i praÄ‡enje vozila</Text>
+              <Text style={styles.analysisStep}>3. Detekcija i praćenje vozila</Text>
               <Text style={styles.analysisStep}>4. Procjena kretanja</Text>
             </View>
 
             {analysis ? (
             <View style={styles.modelNotice}>
-              <Text style={styles.modelNoticeTitle}>{analysis.status === 'completed' ? 'Lokalna analiza je dovrĹˇena' : 'Lokalna analiza nije dostupna'}</Text>
+              <Text style={styles.modelNoticeTitle}>{analysis.status === 'completed' ? 'Lokalna analiza je dovršena' : 'Lokalna analiza nije dostupna'}</Text>
               <Text style={styles.modelNoticeText}>
-                Analiza koristi lokalni model vozila i OCR. Rezultati oznake ostaju kandidati dok se ne potvrde kroz viĹˇe kadrova.
+                {analysis.status === 'ready-for-model'
+                  ? 'Model detekcije nije uključen u ovu javnu verziju. Snimka ostaje spremljena i spremna za buduću lokalnu analizu.'
+                  : 'Analiza koristi lokalni model vozila i OCR. Rezultati oznake ostaju kandidati dok se ne potvrde kroz više kadrova.'}
               </Text>
-              <Text style={styles.modelNoticeText}>Dokazni kadrovi: {analysis.evidenceFrames.length} Â· tragovi vozila: {analysis.vehicleTracks.length}</Text>
+              <Text style={styles.modelNoticeText}>Dokazni kadrovi: {analysis.evidenceFrames.length} · tragovi vozila: {analysis.vehicleTracks.length}</Text>
               {analysis.vehicleTracks.map(track => (
                 <View key={`${track.id}-evidence`} style={styles.trackEvidence}>
                   {track.evidenceCropUri
                     ? <Image source={{ uri: track.evidenceCropUri }} style={styles.trackEvidenceImage} />
                     : <View style={styles.trackEvidenceUnavailable}><Text style={styles.trackEvidenceUnavailableText}>Izrez nije dostupan</Text></View>}
-                  <Text style={styles.trackEvidenceLabel}>Vozilo {track.id} Â· {formatFrameTime(track.evidenceFrameTimeMs)}</Text>
-                  <Text style={styles.trackEvidenceMeta}>Detekcije: {track.detections.length} Â· najviĹˇe {Math.round(Math.max(...track.detections.map(detection => detection.confidence), 0) * 100)}%</Text>
+                  <Text style={styles.trackEvidenceLabel}>Vozilo {track.id} · {formatFrameTime(track.evidenceFrameTimeMs)}</Text>
+                  <Text style={styles.trackEvidenceMeta}>Detekcije: {track.detections.length} · najviše {Math.round(Math.max(...track.detections.map(detection => detection.confidence), 0) * 100)}%</Text>
                   <View style={styles.trackDiagnostics}>
                     <Text style={styles.trackDiagnosticsTitle}>Razvojna dijagnostika</Text>
                     {track.detections.map((detection, index) => (
                       <Text key={`${track.id}-diagnostic-${detection.frameTimeMs}-${index}`} style={styles.trackDiagnosticsText}>
-                        {formatFrameTime(detection.frameTimeMs)} Â· {Math.round(detection.confidence * 100)}% Â· x {detection.boundingBox.x.toFixed(3)} Â· y {detection.boundingBox.y.toFixed(3)} Â· w {detection.boundingBox.width.toFixed(3)} Â· h {detection.boundingBox.height.toFixed(3)}
+                        {formatFrameTime(detection.frameTimeMs)} · {Math.round(detection.confidence * 100)}% · x {detection.boundingBox.x.toFixed(3)} · y {detection.boundingBox.y.toFixed(3)} · w {detection.boundingBox.width.toFixed(3)} · h {detection.boundingBox.height.toFixed(3)}
                       </Text>
                     ))}
                   </View>
@@ -92,20 +94,20 @@ function VehicleAnalysisSheet({ session, onClose, onRequestAnalysis }: { session
               ))}
               {analysis.vehicleTracks.flatMap(track => track.plateCandidates.filter(candidate => candidate.confirmationCount >= 2).map(candidate => (
                 <Text key={`${track.id}-${candidate.normalizedText}`} style={styles.associatedPlateText}>
-                  Vozilo {track.id}: {candidate.normalizedText} Â· {candidate.confirmationCount} kadar(a) Â· {candidate.confidenceLevel} Â· {candidate.supportingFrameIds.map(id => analysis.evidenceFrames.find(frame => frame.id === id)).filter(Boolean).map(frame => formatFrameTime(frame?.frameTimeMs)).join(', ')}
+                  Vozilo {track.id}: {candidate.normalizedText} · {candidate.confirmationCount} kadar(a) · {candidate.confidenceLevel} · {candidate.supportingFrameIds.map(id => analysis.evidenceFrames.find(frame => frame.id === id)).filter(Boolean).map(frame => formatFrameTime(frame?.frameTimeMs)).join(', ')}
                 </Text>
               )))}
               {analysis.vehicleTracks.flatMap(track => track.noise ? (
                 <Text key={`${track.id}-noise`} style={styles.associatedNoiseText}>
-                  Vozilo {track.id}: buka {formatDbfs(track.noise.averageDbfs)} Â· vrh {formatDbfs(track.noise.peakDbfs)} Â· {track.noise.confidenceLevel}
+                  Vozilo {track.id}: buka {formatDbfs(track.noise.averageDbfs)} · vrh {formatDbfs(track.noise.peakDbfs)} · {track.noise.confidenceLevel}
                 </Text>
               ) : [])}
               {analysis.unassignedPlateCandidates.length > 0 && (
                 <View style={styles.ocrCandidates}>
-                  <Text style={styles.ocrCandidatesTitle}>OCR kandidati â€” nisu pridruĹľeni vozilu</Text>
+                  <Text style={styles.ocrCandidatesTitle}>OCR kandidati — nisu pridruženi vozilu</Text>
                   {analysis.unassignedPlateCandidates.map(candidate => (
                     <Text key={candidate.normalizedText} style={styles.ocrCandidateText}>
-                      {candidate.normalizedText} Â· {candidate.confirmationCount} kadar(a) Â· {candidate.confidenceLevel}
+                      {candidate.normalizedText} · {candidate.confirmationCount} kadar(a) · {candidate.confidenceLevel}
                     </Text>
                   ))}
                 </View>
@@ -125,27 +127,27 @@ function VehicleAnalysisSheet({ session, onClose, onRequestAnalysis }: { session
                               width: `${detection.boundingBox.width * 100}%`,
                               height: `${detection.boundingBox.height * 100}%`,
                             }]}>
-                              <Text numberOfLines={1} style={styles.detectionLabel}>{track.id.replace('track-', 'VOZILO ')} Â· {Math.round(detection.confidence * 100)}%</Text>
+                              <Text numberOfLines={1} style={styles.detectionLabel}>{track.id.replace('track-', 'VOZILO ')} · {Math.round(detection.confidence * 100)}%</Text>
                             </View>
                           )))}
                       </View>
-                      <Text style={styles.evidenceLabel}>#{index + 1} Â· {Math.round((frame.overallScore ?? 0) * 100)}%</Text>
+                      <Text style={styles.evidenceLabel}>#{index + 1} · {Math.round((frame.overallScore ?? 0) * 100)}%</Text>
                     </View>
                   ))}
                 </View>
               )}
               {analysis.limitations.map(limitation => (
-                <Text key={limitation} style={styles.reportLimitation}>â€˘ {limitation}</Text>
+                <Text key={limitation} style={styles.reportLimitation}>• {limitation}</Text>
               ))}
             </View>
             ) : (
             <Text style={styles.analysisHint}>
-              Analiza joĹˇ nije pokrenuta. Odaberite lokalnu analizu za izdvajanje kadrova, detekciju vozila i OCR kandidata.
+              Analiza još nije pokrenuta. Odaberite lokalnu analizu za izdvajanje kadrova, detekciju vozila i OCR kandidata.
             </Text>
             )}
 
             <Pressable accessibilityRole="button" disabled={analysisInProgress} onPress={() => void prepareAnalysis()} style={[styles.primaryButton, analysisInProgress && styles.primaryButtonDisabled]}>
-              <Text style={styles.primaryButtonText}>{analysisInProgress ? 'Lokalna analiza u tijekuâ€¦' : analysis ? 'Ponovno analiziraj lokalno' : 'Pokreni lokalnu analizu'}</Text>
+              <Text style={styles.primaryButtonText}>{analysisInProgress ? 'Lokalna analiza u tijeku…' : analysis ? 'Ponovno analiziraj lokalno' : 'Pokreni lokalnu analizu'}</Text>
             </Pressable>
           </ScrollView>
         </SafeAreaView>
@@ -162,10 +164,10 @@ function ReportSheet({ session, onClose, onExport }: { session: Session; onClose
         <SafeAreaView style={styles.reportSheet}>
           <View style={styles.playerHeader}>
             <View>
-              <Text style={styles.playerTitle}>IzvjeĹˇÄ‡e sesije</Text>
+              <Text style={styles.playerTitle}>Izvješće sesije</Text>
               <Text style={styles.analysisSubtitle}>{new Date(session.createdAt).toLocaleString('hr-HR')}</Text>
             </View>
-            <Pressable accessibilityLabel="Zatvori izvjeĹˇÄ‡e" onPress={onClose} style={styles.closeButton}>
+            <Pressable accessibilityLabel="Zatvori izvješće" onPress={onClose} style={styles.closeButton}>
               <Text style={styles.closeButtonText}>Zatvori</Text>
             </Pressable>
           </View>
@@ -173,7 +175,7 @@ function ReportSheet({ session, onClose, onExport }: { session: Session; onClose
             <View style={styles.reportSummary}>
               <Text style={styles.reportSummaryText}>Trajanje: {formatDuration(session.durationSeconds)}</Text>
               <Text style={styles.reportSummaryText}>Lokacija: {formatLocation(session.location)}</Text>
-              <Text style={styles.reportSummaryText}>Buka: prosjek {formatDbfs(session.noiseAverageDbfs)} Â· vrh {formatDbfs(session.noisePeakDbfs)}</Text>
+              <Text style={styles.reportSummaryText}>Buka: prosjek {formatDbfs(session.noiseAverageDbfs)} · vrh {formatDbfs(session.noisePeakDbfs)}</Text>
               <Text style={styles.reportSummaryText}>{analysisLabel(session.analysis)}</Text>
             </View>
             {report ? (
@@ -181,27 +183,27 @@ function ReportSheet({ session, onClose, onExport }: { session: Session; onClose
                 <Text style={styles.reportHeading}>Vozila i oznake</Text>
                 {report.vehicleTracks.length ? report.vehicleTracks.map(track => (
                   <View key={track.id} style={styles.reportTrack}>
-                    <Text style={styles.reportTrackTitle}>{track.id} Â· {formatFrameTime(track.evidenceFrameTimeMs)}</Text>
+                    <Text style={styles.reportTrackTitle}>{track.id} · {formatFrameTime(track.evidenceFrameTimeMs)}</Text>
                     {track.evidenceCropUri && <Image source={{ uri: track.evidenceCropUri }} style={styles.reportTrackImage} />}
                     {track.plateCandidates.some(candidate => candidate.confirmationCount >= 2) ? track.plateCandidates.filter(candidate => candidate.confirmationCount >= 2).map(candidate => (
-                      <Text key={candidate.normalizedText} style={styles.reportPlateText}>{candidate.normalizedText} Â· {candidate.confirmationCount} kadar(a) Â· {candidate.confidenceLevel}</Text>
-                    )) : <Text style={styles.reportMuted}>Nema potvrÄ‘enog kandidata oznake.</Text>}
+                      <Text key={candidate.normalizedText} style={styles.reportPlateText}>{candidate.normalizedText} · {candidate.confirmationCount} kadar(a) · {candidate.confidenceLevel}</Text>
+                    )) : <Text style={styles.reportMuted}>Nema potvrđenog kandidata oznake.</Text>}
                   </View>
-                )) : <Text style={styles.reportMuted}>U dokaznim kadrovima nisu pronaÄ‘ena vozila.</Text>}
+                )) : <Text style={styles.reportMuted}>U dokaznim kadrovima nisu pronađena vozila.</Text>}
                 {report.unassignedPlateCandidates.length > 0 && (
                   <View style={styles.reportSection}>
-                    <Text style={styles.reportHeading}>NepridruĹľeni OCR kandidati</Text>
-                    {report.unassignedPlateCandidates.map(candidate => <Text key={candidate.normalizedText} style={styles.reportMuted}>{candidate.normalizedText} Â· {candidate.confidenceLevel}</Text>)}
+                    <Text style={styles.reportHeading}>Nepridruženi OCR kandidati</Text>
+                    {report.unassignedPlateCandidates.map(candidate => <Text key={candidate.normalizedText} style={styles.reportMuted}>{candidate.normalizedText} · {candidate.confidenceLevel}</Text>)}
                   </View>
                 )}
                 <View style={styles.reportSection}>
-                  <Text style={styles.reportHeading}>OgraniÄŤenja</Text>
-                  {report.limitations.map(item => <Text key={item} style={styles.reportMuted}>â€˘ {item}</Text>)}
+                  <Text style={styles.reportHeading}>Ograničenja</Text>
+                  {report.limitations.map(item => <Text key={item} style={styles.reportMuted}>• {item}</Text>)}
                 </View>
               </>
-            ) : <Text style={styles.reportMuted}>Analiza joĹˇ nije pokrenuta. Otvorite â€žAnalizirajâ€ť za ovu sesiju.</Text>}
+            ) : <Text style={styles.reportMuted}>Analiza još nije pokrenuta. Otvorite „Analiziraj” za ovu sesiju.</Text>}
             <Pressable accessibilityRole="button" onPress={() => onExport(session)} style={styles.exportReportButton}>
-              <Text style={styles.exportReportButtonText}>Izvezi tekstualno izvjeĹˇÄ‡e</Text>
+              <Text style={styles.exportReportButtonText}>Izvezi tekstualno izvješće</Text>
             </Pressable>
           </ScrollView>
         </SafeAreaView>
@@ -235,7 +237,7 @@ export default function App() {
   const noiseSamplesRef = useRef(0);
   const noiseTimelineRef = useRef<NoiseSample[]>([]);
   const { sessions, prepend, remove, updateAnalysis } = useSessionStore();
-  const { progress: analysisProgress, run: runSessionAnalysis } = useAnalysisQueue(updateAnalysis);
+  const { activeSessionIds, progress: analysisProgress, run: runSessionAnalysis } = useAnalysisQueue(updateAnalysis);
   const analysisSession = sessions.find(session => session.id === analysisSessionId) ?? null;
   const reportSession = sessions.find(session => session.id === reportSessionId) ?? null;
   const noiseDbfs = isRecording && typeof audioRecorderState.metering === 'number' ? audioRecorderState.metering : null;
@@ -268,7 +270,7 @@ export default function App() {
       await prepend(importedSession);
       void runSessionAnalysis(importedSession);
     } catch (error) {
-      Alert.alert('Uvoz nije uspio', error instanceof Error ? error.message : 'Odaberite podrĹľanu videodatoteku i pokuĹˇajte ponovno.');
+      Alert.alert('Uvoz nije uspio', error instanceof Error ? error.message : 'Odaberite podržanu videodatoteku i pokušajte ponovno.');
     } finally {
       setIsImporting(false);
     }
@@ -288,7 +290,7 @@ export default function App() {
         // Public-road observations do not need household-level precision.
         latitude: Number(position.coords.latitude.toFixed(3)),
         longitude: Number(position.coords.longitude.toFixed(3)),
-        accuracyMeters: position.coords.accuracy,
+        accuracyMeters: Math.max(position.coords.accuracy ?? 0, 110),
         capturedAt: new Date(position.timestamp).toISOString(),
       };
     } catch {
@@ -330,7 +332,7 @@ export default function App() {
       await prepend(newSession);
       void runSessionAnalysis(newSession);
     } catch {
-      Alert.alert('Snimanje nije uspjelo', 'Provjerite dozvole kamere i mikrofona pa pokuĹˇajte ponovno.');
+      Alert.alert('Snimanje nije uspjelo', 'Provjerite dozvole kamere i mikrofona pa pokušajte ponovno.');
     } finally {
       if (audioRecorder.isRecording) await audioRecorder.stop().catch(() => undefined);
       startedAt.current = null;
@@ -350,10 +352,14 @@ export default function App() {
   }
 
   function confirmDelete(session: Session) {
-    Alert.alert('Obrisati snimku?', 'Video i unos u dnevniku bit Ä‡e trajno uklonjeni s ureÄ‘aja.', [
+    if (activeSessionIds.includes(session.id)) {
+      Alert.alert('Obrada je u tijeku', 'Pričekajte završetak lokalne obrade prije brisanja sesije.');
+      return;
+    }
+    Alert.alert('Obrisati snimku?', 'Video i unos u dnevniku bit će trajno uklonjeni s uređaja.', [
       { text: 'Odustani', style: 'cancel' },
       {
-        text: 'ObriĹˇi',
+        text: 'Obriši',
         style: 'destructive',
         onPress: () => void deleteSession(session),
       },
@@ -366,7 +372,7 @@ export default function App() {
       await remove(session.id);
       if (previewUri === session.uri) setPreviewUri(null);
     } catch {
-      Alert.alert('Brisanje nije uspjelo', 'PokuĹˇajte ponovno.');
+      Alert.alert('Brisanje nije uspjelo', 'Pokušajte ponovno.');
     }
   }
 
@@ -374,7 +380,7 @@ export default function App() {
     try {
       await shareRecording(session);
     } catch (error) {
-      Alert.alert('Izvoz nije uspio', error instanceof Error ? error.message : 'PokuĹˇajte ponovno.');
+      Alert.alert('Izvoz nije uspio', error instanceof Error ? error.message : 'Pokušajte ponovno.');
     }
   }
 
@@ -382,7 +388,7 @@ export default function App() {
     try {
       await shareSessionReport(session, analysisProgress[session.id]);
     } catch (error) {
-      Alert.alert('Izvoz izvjeĹˇtaja nije uspio', error instanceof Error ? error.message : 'PokuĹˇajte ponovno.');
+      Alert.alert('Izvoz izvještaja nije uspio', error instanceof Error ? error.message : 'Pokušajte ponovno.');
     }
   }
 
@@ -400,7 +406,7 @@ export default function App() {
         <Text style={styles.eyebrow}>LOKALNA VIDEO ANALITIKA</Text>
         <Text style={styles.permissionTitle}>Pristup senzorima</Text>
         <Text style={styles.permissionText}>
-          Za snimanje prometne scene potrebni su kamera i mikrofon. Snimke ostaju lokalno na vaĹˇem ureÄ‘aju.
+          Za snimanje prometne scene potrebni su kamera i mikrofon. Snimke ostaju lokalno na vašem uređaju.
         </Text>
         <Pressable style={styles.primaryButton} onPress={() => void requestPermissions()}>
           <Text style={styles.primaryButtonText}>Dopusti pristup</Text>
@@ -466,7 +472,7 @@ export default function App() {
           disabled={isRecording}
           onPress={() => setFacing(current => (current === 'back' ? 'front' : 'back'))}
         >
-          <Text style={styles.secondaryButtonText}>â†» Kamera</Text>
+          <Text style={styles.secondaryButtonText}>↻ Kamera</Text>
         </Pressable>
         <Pressable
           style={[styles.recordButton, (isRecording || isStopping) && styles.stopButton, isStopping && styles.recordButtonDisabled]}
@@ -474,14 +480,15 @@ export default function App() {
           onPress={() => void (isRecording ? stopRecording() : startRecording())}
         >
           <View style={[styles.recordIcon, (isRecording || isStopping) && styles.stopIcon]} />
-          <Text style={styles.recordButtonText}>{isStopping ? 'Spremanjeâ€¦' : isRecording ? 'Zaustavi' : 'Snimi'}</Text>
+          <Text style={styles.recordButtonText}>{isStopping ? 'Spremanje…' : isRecording ? 'Zaustavi' : 'Snimi'}</Text>
         </Pressable>
         <Pressable accessibilityRole="button" disabled={isImporting || isRecording || isStopping} onPress={() => void importVideoSession()} style={[styles.importButton, (isImporting || isRecording || isStopping) && styles.importButtonDisabled]}>
-          <Text style={styles.importButtonText}>{isImporting ? 'Uvozâ€¦' : 'Uvezi MP4'}</Text>
+          <Text style={styles.importButtonText}>{isImporting ? 'Uvoz…' : 'Uvezi MP4'}</Text>
         </Pressable>
       </View>
 
       <SessionList
+        activeSessionIds={activeSessionIds}
         analysisProgress={analysisProgress}
         onAnalyze={session => setAnalysisSessionId(session.id)}
         onDelete={confirmDelete}

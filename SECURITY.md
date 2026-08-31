@@ -19,6 +19,6 @@ U prijavi navedite pogođenu verziju, korake reprodukcije, mogući učinak i pri
 
 ## Poznati upstream nalazi
 
-Na dan 10. kolovoza 2026. `npm audit` prijavljuje nalaze u Expo/React Native/Metro razvojnom lancu, prvenstveno `image-size` DoS pri obradi posebno oblikovanih ICNS/JXL/HEIF datoteka i stariji `uuid` kroz alat `xcode`. Za korištene kompatibilne verzije nema dostupne ispravke bez neispravnog ili regresivnog downgradea Expo SDK-a. Aplikacija ne prosljeđuje korisnički uvezene videozapise Metrou; održavatelji ipak ne smiju pokretati bundler nad nepouzdanim assetima i trebaju primijeniti službenu nadogradnju čim je Expo objavi.
+Na dan 31. kolovoza 2026. `npm audit --omit=dev` prijavljuje 11 umjerenih, bez visokih ili kritičnih nalaza. Preostali nalazi dolaze kroz aktualni Expo config/prebuild lanac i stariji `uuid` koji koristi alat `xcode`. Npm kao automatski "popravak" predlaže regresivni povratak s Expo SDK-a 57 na 46, što nije prihvatljivo niti je stvarna sigurnosna nadogradnja. Održavatelji trebaju primijeniti kompatibilnu službenu Expo nadogradnju čim bude dostupna.
 
 Ovo nije tvrdnja da su svi audit nalazi iskoristivi u runtime aplikaciji. Dependabot prati nove verzije, a svaku nadogradnju treba potvrditi kroz `npm run check`, `npx expo-doctor` i development build na uređaju.

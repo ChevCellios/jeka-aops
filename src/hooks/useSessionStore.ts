@@ -6,11 +6,14 @@ import { loadStoredSessions, persistSessions } from '../services/sessionStorage'
 export function useSessionStore() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const sessionsRef = useRef<Session[]>([]);
+  const persistenceTail = useRef<Promise<void>>(Promise.resolve());
 
   const replace = useCallback(async (next: Session[]) => {
     sessionsRef.current = next;
     setSessions(next);
-    await persistSessions(next);
+    const persistence = persistenceTail.current.catch(() => undefined).then(() => persistSessions(next));
+    persistenceTail.current = persistence;
+    await persistence;
   }, []);
 
   const update = useCallback(async (transform: (current: Session[]) => Session[]) => {

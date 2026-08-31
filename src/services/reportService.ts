@@ -3,6 +3,7 @@ import * as Sharing from 'expo-sharing';
 import type { Session } from '../models/session';
 import { analysisLabel, formatDbfs, formatDuration, formatLocation } from '../utils/formatters';
 import { RECORDINGS_DIRECTORY } from './sessionStorage';
+import { videoMimeType } from './videoFiles';
 
 async function ensureSharingAvailable() {
   if (!await Sharing.isAvailableAsync()) throw new Error('Ovaj uređaj trenutačno ne podržava dijeljenje datoteka.');
@@ -10,7 +11,7 @@ async function ensureSharingAvailable() {
 
 export async function shareRecording(session: Session) {
   await ensureSharingAvailable();
-  await Sharing.shareAsync(session.uri, { mimeType: 'video/mp4', dialogTitle: 'Izvezi snimku' });
+  await Sharing.shareAsync(session.uri, { mimeType: videoMimeType(session.uri), dialogTitle: 'Izvezi snimku' });
 }
 
 export async function shareSessionReport(session: Session, progress?: string) {
