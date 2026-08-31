@@ -1,5 +1,9 @@
 # JEKA AOPS
 
+<p align="center">
+  <img src="docs/assets/jeka-aops-readme.gif" alt="JEKA AOPS — animirani prikaz audio-optičkog sustava prometne sigurnosti" width="100%" />
+</p>
+
 **JEKA AOPS — Audio-optički sustav prometne sigurnosti**
 
 Mobilni istraživačko-razvojni projekt za snimanje i kasniju analizu prometnih scena pomoću kamere, mikrofona i umjetne inteligencije na pametnom telefonu.
