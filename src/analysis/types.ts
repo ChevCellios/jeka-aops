@@ -60,6 +60,18 @@ export type NoiseSample = {
   dbfs: number;
 };
 
+export type NoiseSource = 'embedded-video' | 'live-metering';
+
+export type AudioAnalysisSummary = {
+  source: NoiseSource;
+  sampleCount: number;
+  sampleRateHz?: number;
+  windowMs: number;
+  averageDbfs: number;
+  peakDbfs: number;
+  note: string;
+};
+
 export type VehicleTrack = {
   id: string;
   detections: VehicleDetection[];
@@ -79,6 +91,7 @@ export type AnalysisReport = {
   evidenceFrames: EvidenceFrame[];
   vehicleTracks: VehicleTrack[];
   unassignedPlateCandidates: PlateCandidate[];
+  audioSummary?: AudioAnalysisSummary;
   limitations: string[];
 };
 

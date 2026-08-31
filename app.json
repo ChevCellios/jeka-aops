@@ -27,7 +27,9 @@
       ],
       "expo-asset",
       "expo-sharing",
-      "expo-status-bar"
+      "expo-status-bar",
+      "react-native-fast-tflite",
+      "react-native-audio-api"
     ],
     "ios": {
       "supportsTablet": true

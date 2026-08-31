@@ -1,10 +1,11 @@
 import { extractEvidenceFrames, extractEvidenceFramesAtTimes } from './evidenceFrames';
 import * as FileSystem from 'expo-file-system/legacy';
-import { rankVehicleEvidenceFrames } from './frameRanking';
+import { rankEvidenceFrames, rankVehicleEvidenceFrames } from './frameRanking';
 import { trackVehicles } from './tracking';
 import { detectVehiclesInFrames, vehicleDetectionAvailable } from './vehicleDetectionModel';
-import type { AnalysisReport, NoiseSample } from './types';
+import type { AnalysisReport, NoiseSample, NoiseSource } from './types';
 import { prepareVehicleAnalysis } from './vehicleAnalysis';
+import { decodeAudioReadings } from './audioDecoder';
 
 export type CaptureLocation = {
   latitude: number;
@@ -21,7 +22,7 @@ export type SessionAnalysis = {
   report?: AnalysisReport;
 };
 
-export type AnalysisProgress = 'Izdvajam kadrove' | 'Tražim vozila' | 'Izdvajam guste kadrove' | 'Rangiram dokaze' | 'Čitam oznake';
+export type AnalysisProgress = 'Dekodiram zvuk' | 'Izdvajam kadrove' | 'Tražim vozila' | 'Izdvajam guste kadrove' | 'Rangiram dokaze' | 'Čitam oznake';
 
 const DENSE_SAMPLE_INTERVAL_MS = 200;
 const VEHICLE_WINDOW_PADDING_MS = 1_000;
@@ -56,8 +57,26 @@ function denseVehicleTimes(detections: Awaited<ReturnType<typeof detectVehiclesI
 
 /** Entry point for post-recording processing; later AI stages live here. */
 export async function beginAutomaticAnalysis(sessionUri: string, sessionId: string, durationSeconds: number, noiseSamples: NoiseSample[] = [], onProgress?: (progress: AnalysisProgress) => void): Promise<SessionAnalysis> {
+  let effectiveNoiseSamples = noiseSamples;
+  let noiseSource: NoiseSource = 'live-metering';
+  let audioSampleRateHz: number | undefined;
+  let audioWarning: string | undefined;
+  if (!effectiveNoiseSamples.length) {
+    onProgress?.('Dekodiram zvuk');
+    try {
+      const decoded = await decodeAudioReadings(sessionUri);
+      effectiveNoiseSamples = decoded.samples;
+      noiseSource = 'embedded-video';
+      audioSampleRateHz = decoded.sampleRateHz;
+      console.log('[JEKA AOPS] Audio je dekodiran', { sessionId, samples: decoded.samples.length, channels: decoded.channelCount, sampleRateHz: decoded.sampleRateHz, durationSeconds: decoded.durationSeconds });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      audioWarning = 'Audio zapis nije dostupan ili ga ovaj uređaj ne može dekodirati.';
+      console.warn('[JEKA AOPS] Audio nije dekodiran', { sessionId, error: message });
+    }
+  }
   if (!vehicleDetectionAvailable) {
-    const result = await prepareVehicleAnalysis(sessionUri, [], noiseSamples);
+    const result = await prepareVehicleAnalysis(sessionUri, [], effectiveNoiseSamples, false, undefined, undefined, noiseSource, audioSampleRateHz, audioWarning);
     return {
       status: 'ready-for-model',
       updatedAt: new Date().toISOString(),
@@ -87,10 +106,18 @@ export async function beginAutomaticAnalysis(sessionUri: string, sessionId: stri
     const denseDetections = await detectVehiclesInFrames(denseCandidates);
     const denseFrameTimesWithVehicles = new Set(denseDetections.map(detection => detection.frameTimeMs));
     const denseVehicleCandidates = denseCandidates.filter(frame => denseFrameTimesWithVehicles.has(frame.frameTimeMs));
-    const evidencePool = denseVehicleCandidates.length ? denseVehicleCandidates : vehicleCandidates;
+    // If the detector misses every vehicle, retain the best full frames and run
+    // OCR as an explicitly unassigned fallback instead of returning no evidence.
+    const evidencePool = denseVehicleCandidates.length
+      ? denseVehicleCandidates
+      : vehicleCandidates.length
+        ? vehicleCandidates
+        : candidates;
     const detectionPool = denseVehicleCandidates.length ? denseDetections : candidateDetections;
     onProgress?.('Rangiram dokaze');
-    const rankedFrames = await rankVehicleEvidenceFrames(evidencePool, detectionPool);
+    const rankedFrames = detectionPool.length
+      ? await rankVehicleEvidenceFrames(evidencePool, detectionPool)
+      : await rankEvidenceFrames(evidencePool);
     const tracks = trackVehicles(detectionPool, evidencePool);
     const selectedIds = new Set<string>();
     for (const track of tracks) {
@@ -133,10 +160,13 @@ export async function beginAutomaticAnalysis(sessionUri: string, sessionId: stri
     const result = await prepareVehicleAnalysis(
       sessionUri,
       evidenceFrames,
-      noiseSamples,
+      effectiveNoiseSamples,
       vehicleCandidates.length === 0,
       selectedDetections,
       tracks,
+      noiseSource,
+      audioSampleRateHz,
+      audioWarning,
     );
     console.log('[JEKA AOPS] Izvještaj analize', {
       sessionId,
@@ -149,7 +179,7 @@ export async function beginAutomaticAnalysis(sessionUri: string, sessionId: stri
       status: result.status === 'completed' ? 'completed' : result.status === 'ready-for-model' ? 'ready-for-model' : 'failed',
       updatedAt: new Date().toISOString(),
       note: vehicleCandidates.length === 0
-        ? 'U izdvojenim kadrovima nisu pronađena vozila; prazni kadrovi nisu analizirani.'
+        ? `Detektor nije pronašao vozilo; OCR je ipak provjeren na ${evidenceFrames.length} najbolja kadra.`
         : result.status === 'completed'
         ? `Analiza je dovršena na ${evidenceFrames.length} rangiranih dokaznih kadrova.`
         : result.status === 'ready-for-model'

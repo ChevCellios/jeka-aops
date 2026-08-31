@@ -71,10 +71,15 @@ function VehicleAnalysisSheet({ session, onClose, onRequestAnalysis }: { session
               <Text style={styles.modelNoticeTitle}>{analysis.status === 'completed' ? 'Lokalna analiza je dovršena' : 'Lokalna analiza nije dostupna'}</Text>
               <Text style={styles.modelNoticeText}>
                 {analysis.status === 'ready-for-model'
-                  ? 'Model detekcije nije uključen u ovu javnu verziju. Snimka ostaje spremljena i spremna za buduću lokalnu analizu.'
+                  ? 'Lokalni model detekcije nije se mogao pokrenuti u ovom buildu. Snimka ostaje spremljena; tehnički detalj prikazan je u ograničenjima izvještaja.'
                   : 'Analiza koristi lokalni model vozila i OCR. Rezultati oznake ostaju kandidati dok se ne potvrde kroz više kadrova.'}
               </Text>
               <Text style={styles.modelNoticeText}>Dokazni kadrovi: {analysis.evidenceFrames.length} · tragovi vozila: {analysis.vehicleTracks.length}</Text>
+              {analysis.audioSummary && (
+                <Text style={styles.modelNoticeText}>
+                  Zvuk videa: prosjek {formatDbfs(analysis.audioSummary.averageDbfs)} · vrh {formatDbfs(analysis.audioSummary.peakDbfs)} · {analysis.audioSummary.sampleCount} očitanja
+                </Text>
+              )}
               {analysis.vehicleTracks.map(track => (
                 <View key={`${track.id}-evidence`} style={styles.trackEvidence}>
                   {track.evidenceCropUri
@@ -175,7 +180,10 @@ function ReportSheet({ session, onClose, onExport }: { session: Session; onClose
             <View style={styles.reportSummary}>
               <Text style={styles.reportSummaryText}>Trajanje: {formatDuration(session.durationSeconds)}</Text>
               <Text style={styles.reportSummaryText}>Lokacija: {formatLocation(session.location)}</Text>
-              <Text style={styles.reportSummaryText}>Buka: prosjek {formatDbfs(session.noiseAverageDbfs)} · vrh {formatDbfs(session.noisePeakDbfs)}</Text>
+              <Text style={styles.reportSummaryText}>
+                Zvuk: prosjek {formatDbfs(report?.audioSummary?.averageDbfs ?? session.noiseAverageDbfs)} · vrh {formatDbfs(report?.audioSummary?.peakDbfs ?? session.noisePeakDbfs)}
+              </Text>
+              {report?.audioSummary && <Text style={styles.reportSummaryText}>Dekodirano: {report.audioSummary.sampleCount} očitanja po {report.audioSummary.windowMs} ms</Text>}
               <Text style={styles.reportSummaryText}>{analysisLabel(session.analysis)}</Text>
             </View>
             {report ? (
@@ -188,6 +196,7 @@ function ReportSheet({ session, onClose, onExport }: { session: Session; onClose
                     {track.plateCandidates.some(candidate => candidate.confirmationCount >= 2) ? track.plateCandidates.filter(candidate => candidate.confirmationCount >= 2).map(candidate => (
                       <Text key={candidate.normalizedText} style={styles.reportPlateText}>{candidate.normalizedText} · {candidate.confirmationCount} kadar(a) · {candidate.confidenceLevel}</Text>
                     )) : <Text style={styles.reportMuted}>Nema potvrđenog kandidata oznake.</Text>}
+                    {track.noise && <Text style={styles.reportMuted}>Zvuk uz prolazak: prosjek {formatDbfs(track.noise.averageDbfs)} · vrh {formatDbfs(track.noise.peakDbfs)}</Text>}
                   </View>
                 )) : <Text style={styles.reportMuted}>U dokaznim kadrovima nisu pronađena vozila.</Text>}
                 {report.unassignedPlateCandidates.length > 0 && (

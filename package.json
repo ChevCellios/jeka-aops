@@ -25,7 +25,13 @@
     "jpeg-js": "^0.4.4",
     "react": "19.2.3",
     "react-native": "0.86.3",
-    "react-native-safe-area-context": "~5.7.0"
+    "react-native-audio-api": "0.13.3",
+    "react-native-fast-tflite": "^3.0.1",
+    "react-native-gesture-handler": "~2.32.0",
+    "react-native-nitro-modules": "^0.37.1",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-worklets": "0.10.1"
   },
   "devDependencies": {
     "@types/react": "~19.2.4",
@@ -50,7 +56,8 @@
     "doctor": {
       "reactNativeDirectoryCheck": {
         "exclude": [
-          "@dariyd/react-native-text-recognition"
+          "@dariyd/react-native-text-recognition",
+          "react-native-fast-tflite"
         ]
       }
     }
