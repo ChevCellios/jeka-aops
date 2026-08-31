@@ -38,7 +38,7 @@ Ako detektor ne pronađe vozilo, aplikacija ipak zadržava do tri najkvalitetnij
 - Mala, zamućena, zaklonjena i noćna vozila mogu biti propuštena.
 - Confidence nije dokaz točnosti niti certificirana mjera.
 - OCR može zamijeniti slične znakove; rezultat ostaje kandidat dok se ne potvrdi kroz više kadrova.
-- Zvuk u videozapisu uvezenom iz galerije trenutačno se ne dekodira u dBFS uzorke. Audio korelacija dostupna je samo kada aplikacija tijekom vlastitog snimanja prikupi vremenske uzorke mikrofona.
+- Zvuk u videozapisu uvezenom iz galerije lokalno se dekodira i svodi na RMS dBFS očitanja u prozorima od 250 ms. To omogućuje vremensku korelaciju s vizualnim tragom vozila, ali nije kalibrirano mjerenje razine zvučnog tlaka u dB(A) niti dokaz da je baš opaženo vozilo izvor zvuka.
 - Bez kalibracije scene aplikacija ne mjeri stvarnu brzinu vozila.
 
 Detekcija, OCR i korelacija buke eksperimentalne su procjene. Ne smiju se predstavljati kao identifikacija osobe, certificirano mjerenje, forenzički dokaz ili automatski zaključak o prometnom prekršaju.

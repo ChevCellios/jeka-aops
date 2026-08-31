@@ -46,7 +46,7 @@ flowchart TB
 - Lokalni dnevnik sesija s vremenom snimanja, trajanjem i veličinom datoteke.
 - Pregled snimljenog videa unutar aplikacije i trajno brisanje odabrane sesije.
 - Sučelje prilagođeno radu na terenu: status, mjerač vremena i brzo zaustavljanje snimanja.
-- Eksperimentalna lokalna obrada: EfficientDet-Lite0 detekcija vozila, izdvajanje i rangiranje kadrova, osnovno praćenje, OCR kandidati oznaka i korelacija dostupnih audio uzoraka.
+- Eksperimentalna lokalna obrada: EfficientDet-Lite0 detekcija vozila, izdvajanje i rangiranje kadrova, osnovno praćenje, OCR kandidati oznaka te dekodiranje i vremenska korelacija zvuka iz uvezenog videa.
 - Razvojna dijagnostika prikazuje confidence, vrijeme i okvir svake detekcije po tragu vozila.
 - Automatizirane provjere obuhvaćaju lint, TypeScript i testove čistih analitičkih modula.
 
@@ -113,6 +113,7 @@ Prije početka snimanja potvrdite dozvole za kameru, mikrofon i lokaciju. Snimit
 - `expo-camera`
 - `expo-file-system`
 - `expo-video`
+- `react-native-audio-api`
 - AsyncStorage
 
 ## AI model

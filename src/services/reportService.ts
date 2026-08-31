@@ -17,15 +17,21 @@ export async function shareRecording(session: Session) {
 export async function shareSessionReport(session: Session, progress?: string) {
   await ensureSharingAvailable();
   const report = session.analysis?.report;
+  const audioAverage = report?.audioSummary?.averageDbfs ?? session.noiseAverageDbfs;
+  const audioPeak = report?.audioSummary?.peakDbfs ?? session.noisePeakDbfs;
   const lines = [
     'JEKA AOPS — izvještaj prometne sesije',
     `Vrijeme snimanja: ${new Date(session.createdAt).toLocaleString('hr-HR')}`,
     `Trajanje: ${formatDuration(session.durationSeconds)}`,
     `Lokacija: ${formatLocation(session.location)}`,
-    `Buka: prosjek ${formatDbfs(session.noiseAverageDbfs)}, vrh ${formatDbfs(session.noisePeakDbfs)} (dBFS)`,
+    `Zvuk: prosjek ${formatDbfs(audioAverage)}, vrh ${formatDbfs(audioPeak)} (dBFS)`,
+    ...(report?.audioSummary ? [`Dekodirani audio: ${report.audioSummary.sampleCount} očitanja po ${report.audioSummary.windowMs} ms`] : []),
     `Status obrade: ${analysisLabel(session.analysis, progress)}`,
     `Dokazni kadrovi: ${report?.evidenceFrames.length ?? 0}`,
     `Tragovi vozila: ${report?.vehicleTracks.length ?? 0}`,
+    ...(report?.vehicleTracks.flatMap(track => track.noise ? [
+      `Vozilo ${track.id}: zvuk uz prolazak ${formatDbfs(track.noise.averageDbfs)} prosjek, ${formatDbfs(track.noise.peakDbfs)} vrh`,
+    ] : []) ?? []),
     '',
     'Ograničenja i upozorenja:',
     ...(report?.limitations ?? ['Automatska analiza još nije pripremljena.']).map(item => `- ${item}`),

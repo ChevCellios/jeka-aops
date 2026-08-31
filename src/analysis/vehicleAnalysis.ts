@@ -1,12 +1,13 @@
-import type { AnalysisReport, EvidenceFrame, NoiseSample, VehicleAnalysisResult, VehicleTrack } from './types';
+import type { AnalysisReport, EvidenceFrame, NoiseSample, NoiseSource, VehicleAnalysisResult, VehicleTrack } from './types';
 import { trackVehicles } from './tracking';
 import { detectVehiclesInFrames } from './vehicleDetectionModel';
 import { recognizePlateObservations } from './plateOcr';
 import { associatePlatesToTracks } from './plateAssociation';
 import { correlateNoiseToTrack } from './noiseCorrelation';
 import { attachVehicleEvidenceCrops } from './vehicleEvidence';
+import { summarizeNoiseSamples } from './audioMetering';
 
-function createEmptyReport(sessionUri: string, evidenceFrames: EvidenceFrame[], tracks: AnalysisReport['vehicleTracks'] = [], plateCandidates: AnalysisReport['unassignedPlateCandidates'] = [], modelError?: string, ocrError?: string): AnalysisReport {
+function createEmptyReport(sessionUri: string, evidenceFrames: EvidenceFrame[], tracks: AnalysisReport['vehicleTracks'] = [], plateCandidates: AnalysisReport['unassignedPlateCandidates'] = [], modelError?: string, ocrError?: string, noiseSamples: NoiseSample[] = [], noiseSource: NoiseSource = 'live-metering', audioSampleRateHz?: number, audioWarning?: string): AnalysisReport {
   return {
     version: 1,
     sessionUri,
@@ -15,6 +16,7 @@ function createEmptyReport(sessionUri: string, evidenceFrames: EvidenceFrame[], 
     evidenceFrames,
     vehicleTracks: tracks,
     unassignedPlateCandidates: plateCandidates,
+    audioSummary: summarizeNoiseSamples(noiseSamples, noiseSource, audioSampleRateHz),
     limitations: [
       ...(modelError ? [`Detekcija vozila nije pokrenuta: ${modelError}`] : ['Detekcija vozila koristi početni COCO model; rezultat nije konačna identifikacija vozila.']),
       ...(ocrError ? [`OCR nije pokrenut: ${ocrError}`] : ['OCR rezultat je samo kandidat dok se ne potvrdi kroz više kadrova i prostorno ne veže uz vozilo.']),
@@ -22,6 +24,7 @@ function createEmptyReport(sessionUri: string, evidenceFrames: EvidenceFrame[], 
       ...(plateCandidates.length ? ['OCR kandidati nisu prostorno pridruženi pojedinom vozilu; ne predstavljaju potvrđenu registracijsku oznaku.'] : []),
       'Bez potvrde kroz više kadrova ne prikazuje se očitana registracijska oznaka.',
       'Mjerenje zvuka u dBFS nije kalibrirano mjerenje zvučnog tlaka u dB(A).',
+      ...(audioWarning ? [audioWarning] : []),
     ],
   };
 }
@@ -34,6 +37,9 @@ export async function prepareVehicleAnalysis(
   noVehicleFound = false,
   precomputedDetections?: VehicleAnalysisResult['detections'],
   precomputedTracks?: VehicleTrack[],
+  noiseSource: NoiseSource = 'live-metering',
+  audioSampleRateHz?: number,
+  audioWarning?: string,
 ): Promise<VehicleAnalysisResult> {
   let detections: VehicleAnalysisResult['detections'] = [];
   let plateCandidates: AnalysisReport['unassignedPlateCandidates'] = [];
@@ -69,7 +75,7 @@ export async function prepareVehicleAnalysis(
     modelError = noVehicleFound ? undefined : 'Nema dostupnih dokaznih kadrova.';
   }
 
-  const report = createEmptyReport(sessionUri, evidenceFrames, tracks, plateCandidates, modelError, ocrError);
+  const report = createEmptyReport(sessionUri, evidenceFrames, tracks, plateCandidates, modelError, ocrError, noiseSamples, noiseSource, audioSampleRateHz, audioWarning);
   if (noVehicleFound) {
     report.limitations = [
       'Model u odabranim kadrovima nije pronašao vozilo.',
@@ -78,7 +84,7 @@ export async function prepareVehicleAnalysis(
     ];
   }
   if (!noiseSamples.length) {
-    report.limitations.push('Nema audio uzoraka za korelaciju; zvučni zapis unutar uvezenog videa trenutačno se ne dekodira u dBFS uzorke.');
+    report.limitations.push('Nema audio uzoraka za očitanje i vremensku korelaciju s vozilom.');
   }
   return {
     status: modelError ? 'ready-for-model' : 'completed',
