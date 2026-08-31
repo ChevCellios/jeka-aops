@@ -1,6 +1,6 @@
 import { extractEvidenceFrames, extractEvidenceFramesAtTimes } from './evidenceFrames';
 import * as FileSystem from 'expo-file-system/legacy';
-import { rankVehicleEvidenceFrames } from './frameRanking';
+import { rankEvidenceFrames, rankVehicleEvidenceFrames } from './frameRanking';
 import { trackVehicles } from './tracking';
 import { detectVehiclesInFrames, vehicleDetectionAvailable } from './vehicleDetectionModel';
 import type { AnalysisReport, NoiseSample } from './types';
@@ -87,10 +87,18 @@ export async function beginAutomaticAnalysis(sessionUri: string, sessionId: stri
     const denseDetections = await detectVehiclesInFrames(denseCandidates);
     const denseFrameTimesWithVehicles = new Set(denseDetections.map(detection => detection.frameTimeMs));
     const denseVehicleCandidates = denseCandidates.filter(frame => denseFrameTimesWithVehicles.has(frame.frameTimeMs));
-    const evidencePool = denseVehicleCandidates.length ? denseVehicleCandidates : vehicleCandidates;
+    // If the detector misses every vehicle, retain the best full frames and run
+    // OCR as an explicitly unassigned fallback instead of returning no evidence.
+    const evidencePool = denseVehicleCandidates.length
+      ? denseVehicleCandidates
+      : vehicleCandidates.length
+        ? vehicleCandidates
+        : candidates;
     const detectionPool = denseVehicleCandidates.length ? denseDetections : candidateDetections;
     onProgress?.('Rangiram dokaze');
-    const rankedFrames = await rankVehicleEvidenceFrames(evidencePool, detectionPool);
+    const rankedFrames = detectionPool.length
+      ? await rankVehicleEvidenceFrames(evidencePool, detectionPool)
+      : await rankEvidenceFrames(evidencePool);
     const tracks = trackVehicles(detectionPool, evidencePool);
     const selectedIds = new Set<string>();
     for (const track of tracks) {
@@ -149,7 +157,7 @@ export async function beginAutomaticAnalysis(sessionUri: string, sessionId: stri
       status: result.status === 'completed' ? 'completed' : result.status === 'ready-for-model' ? 'ready-for-model' : 'failed',
       updatedAt: new Date().toISOString(),
       note: vehicleCandidates.length === 0
-        ? 'U izdvojenim kadrovima nisu pronađena vozila; prazni kadrovi nisu analizirani.'
+        ? `Detektor nije pronašao vozilo; OCR je ipak provjeren na ${evidenceFrames.length} najbolja kadra.`
         : result.status === 'completed'
         ? `Analiza je dovršena na ${evidenceFrames.length} rangiranih dokaznih kadrova.`
         : result.status === 'ready-for-model'

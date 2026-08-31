@@ -8,7 +8,7 @@
 
 Mobilni istraživačko-razvojni projekt za snimanje i kasniju analizu prometnih scena pomoću kamere, mikrofona i umjetne inteligencije na pametnom telefonu.
 
-> Trenutačna verzija: **v0.2.0 razvojna**. Aplikacija lokalno snima videosesije sa zvukom i priprema dokazne kadrove za eksperimentalnu analizu. Javni izvor ne distribuira AI model. Aplikacija ne mjeri niti potvrđuje stvarnu brzinu vozila ili razinu buke.
+> Trenutačna verzija: **v0.2.0 razvojna**. Aplikacija lokalno snima videosesije sa zvukom, izdvaja dokazne kadrove i koristi licencirani lokalni EfficientDet-Lite0 model za eksperimentalnu detekciju vozila. Aplikacija ne mjeri niti potvrđuje stvarnu brzinu vozila ili razinu buke.
 
 ## Cilj
 
@@ -46,7 +46,7 @@ flowchart TB
 - Lokalni dnevnik sesija s vremenom snimanja, trajanjem i veličinom datoteke.
 - Pregled snimljenog videa unutar aplikacije i trajno brisanje odabrane sesije.
 - Sučelje prilagođeno radu na terenu: status, mjerač vremena i brzo zaustavljanje snimanja.
-- Eksperimentalna lokalna obrada: izdvajanje i rangiranje kadrova, osnovno praćenje, OCR kandidati oznaka i korelacija audio uzoraka. Detektor vozila zahtijeva zaseban pravilno licenciran model.
+- Eksperimentalna lokalna obrada: EfficientDet-Lite0 detekcija vozila, izdvajanje i rangiranje kadrova, osnovno praćenje, OCR kandidati oznaka i korelacija dostupnih audio uzoraka.
 - Razvojna dijagnostika prikazuje confidence, vrijeme i okvir svake detekcije po tragu vozila.
 - Automatizirane provjere obuhvaćaju lint, TypeScript i testove čistih analitičkih modula.
 
@@ -81,7 +81,7 @@ Pokrenite razvojni poslužitelj i otvorite ga development buildom. Za rad kamere
 
 ## Android development build i terensko testiranje
 
-Za lokalni AI model aplikacija će koristiti vlastiti Android development build, a ne Expo Go. Konfiguracija je pripremljena u `eas.json` pod profilom `development` i proizvodi interni `.apk` paket.
+Za lokalni AI model aplikacija koristi vlastiti Android development build, a ne Expo Go. Konfiguracija je pripremljena u `eas.json` pod profilom `development` i proizvodi interni `.apk` paket.
 
 Nakon prijave u Expo račun, build se stvara naredbom:
 
@@ -107,8 +107,8 @@ Prije početka snimanja potvrdite dozvole za kameru, mikrofon i lokaciju. Snimit
 
 ## Tehnologije
 
-- Expo SDK 54
-- React Native 0.81.5
+- Expo SDK 57
+- React Native 0.86.3
 - TypeScript
 - `expo-camera`
 - `expo-file-system`
@@ -117,11 +117,11 @@ Prije početka snimanja potvrdite dozvole za kameru, mikrofon i lokaciju. Snimit
 
 ## AI model
 
-Javni repozitorij ne uključuje binarni AI model. Zašto je prethodni razvojni artefakt uklonjen i koji su uvjeti za doprinos novog modela opisano je u [modelskoj kartici](docs/MODEL.md).
+Javni repozitorij uključuje službeni EfficientDet-Lite0 int8 v1 pod Apache-2.0 licencom. Izvor, SHA-256, ulazno-izlazni ugovor i ograničenja opisani su u [modelskoj kartici](docs/MODEL.md).
 
 ## Smjer projekta
 
-JEKA AOPS je otvoreni istraživačko-razvojni projekt pod licencom Apache-2.0. Sljedeći korak je integracija provjerljivo licenciranog lokalnog modela i terenska provjera u Android development buildu. Bez kalibracije scene rezultati se ne smiju predstavljati kao mjerenje.
+JEKA AOPS je otvoreni istraživačko-razvojni projekt pod licencom Apache-2.0. Sljedeći korak je terenska provjera lokalnog modela, OCR-a i praćenja u Android development buildu. Bez kalibracije scene rezultati se ne smiju predstavljati kao mjerenje.
 
 ## Doprinos i sigurnost
 

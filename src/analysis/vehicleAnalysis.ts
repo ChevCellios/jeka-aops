@@ -71,7 +71,14 @@ export async function prepareVehicleAnalysis(
 
   const report = createEmptyReport(sessionUri, evidenceFrames, tracks, plateCandidates, modelError, ocrError);
   if (noVehicleFound) {
-    report.limitations = ['U snimci nisu pronađena vozila; kadrovi bez vozila nisu uključeni u analizu.'];
+    report.limitations = [
+      'Model u odabranim kadrovima nije pronašao vozilo.',
+      'OCR je svejedno pokrenut na najboljim cijelim kadrovima; kandidati bez okvira vozila ostaju nepridruženi.',
+      ...report.limitations.filter(item => !item.startsWith('Detekcija vozila koristi')),
+    ];
+  }
+  if (!noiseSamples.length) {
+    report.limitations.push('Nema audio uzoraka za korelaciju; zvučni zapis unutar uvezenog videa trenutačno se ne dekodira u dBFS uzorke.');
   }
   return {
     status: modelError ? 'ready-for-model' : 'completed',

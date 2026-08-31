@@ -71,7 +71,7 @@ function VehicleAnalysisSheet({ session, onClose, onRequestAnalysis }: { session
               <Text style={styles.modelNoticeTitle}>{analysis.status === 'completed' ? 'Lokalna analiza je dovršena' : 'Lokalna analiza nije dostupna'}</Text>
               <Text style={styles.modelNoticeText}>
                 {analysis.status === 'ready-for-model'
-                  ? 'Model detekcije nije uključen u ovu javnu verziju. Snimka ostaje spremljena i spremna za buduću lokalnu analizu.'
+                  ? 'Lokalni model detekcije nije se mogao pokrenuti u ovom buildu. Snimka ostaje spremljena; tehnički detalj prikazan je u ograničenjima izvještaja.'
                   : 'Analiza koristi lokalni model vozila i OCR. Rezultati oznake ostaju kandidati dok se ne potvrde kroz više kadrova.'}
               </Text>
               <Text style={styles.modelNoticeText}>Dokazni kadrovi: {analysis.evidenceFrames.length} · tragovi vozila: {analysis.vehicleTracks.length}</Text>

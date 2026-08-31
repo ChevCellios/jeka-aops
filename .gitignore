@@ -26,6 +26,8 @@ expo-env.d.ts
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+metro.log
+metro-error.log
 
 # macOS
 .DS_Store
@@ -49,6 +51,7 @@ yarn-error.*
 
 # AI model binaries require independently verified redistribution rights.
 /assets/models/*.tflite
+!/assets/models/efficientdet-lite0-int8-v1.tflite
 /.local-models/
 
 # typescript
