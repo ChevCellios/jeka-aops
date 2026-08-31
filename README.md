@@ -38,6 +38,7 @@ flowchart TB
 - Snimanje videozapisa sa zvukom kroz stražnju ili prednju kameru.
 - Dozvole za kameru i mikrofon na Androidu i iOS-u.
 - Trajna lokalna pohrana snimljene datoteke na uređaju.
+- Uvoz MP4, MOV, M4V i 3GP snimki do 500 MB uz provjeru trajanja.
 - Lokalni dnevnik sesija s vremenom snimanja, trajanjem i veličinom datoteke.
 - Pregled snimljenog videa unutar aplikacije i trajno brisanje odabrane sesije.
 - Sučelje prilagođeno radu na terenu: status, mjerač vremena i brzo zaustavljanje snimanja.

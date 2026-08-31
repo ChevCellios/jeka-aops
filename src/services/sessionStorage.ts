@@ -3,13 +3,44 @@ import * as FileSystem from 'expo-file-system/legacy';
 import type { Session } from '../models/session';
 
 const SESSIONS_KEY = '@jeka-aops/sessions';
+const CORRUPT_SESSIONS_KEY = '@jeka-aops/sessions-corrupt';
 export const RECORDINGS_DIRECTORY = `${FileSystem.documentDirectory}jeka-aops/`;
 export const EVIDENCE_DIRECTORY = `${RECORDINGS_DIRECTORY}evidence/`;
+
+function isStoredSession(value: unknown): value is Session {
+  if (!value || typeof value !== 'object') return false;
+  const session = value as Partial<Session>;
+  return typeof session.id === 'string'
+    && /^\d+$/.test(session.id)
+    && typeof session.uri === 'string'
+    && session.uri.startsWith(RECORDINGS_DIRECTORY)
+    && typeof session.createdAt === 'string'
+    && Number.isFinite(Date.parse(session.createdAt))
+    && typeof session.durationSeconds === 'number'
+    && Number.isFinite(session.durationSeconds)
+    && session.durationSeconds > 0;
+}
+
+async function quarantineCorruptSessions(raw: string) {
+  await AsyncStorage.setItem(CORRUPT_SESSIONS_KEY, raw);
+  await AsyncStorage.removeItem(SESSIONS_KEY);
+}
 
 export async function loadStoredSessions(): Promise<Session[]> {
   const raw = await AsyncStorage.getItem(SESSIONS_KEY);
   if (!raw) return [];
-  const stored = (JSON.parse(raw) as Session[]).map(session => session.analysis?.status === 'running'
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    await quarantineCorruptSessions(raw);
+    return [];
+  }
+  if (!Array.isArray(parsed)) {
+    await quarantineCorruptSessions(raw);
+    return [];
+  }
+  const stored = parsed.filter(isStoredSession).map(session => session.analysis?.status === 'running'
     ? {
         ...session,
         analysis: {
@@ -19,11 +50,12 @@ export async function loadStoredSessions(): Promise<Session[]> {
         },
       }
     : session);
-  return Promise.all(stored.map(async session => {
-    if (session.sizeBytes) return session;
-    const info = await FileSystem.getInfoAsync(session.uri);
-    return { ...session, sizeBytes: info.exists ? info.size : 0 };
+  const checked: (Session | null)[] = await Promise.all(stored.map(async (session): Promise<Session | null> => {
+    const info = await FileSystem.getInfoAsync(session.uri).catch(() => null);
+    if (!info) return null;
+    return info.exists ? { ...session, sizeBytes: info.size } : null;
   }));
+  return checked.filter((session): session is Session => session !== null);
 }
 
 export async function persistSessions(sessions: Session[]) {

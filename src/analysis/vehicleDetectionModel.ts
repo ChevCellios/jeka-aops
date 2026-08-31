@@ -1,5 +1,7 @@
 import type { EvidenceFrame, VehicleDetection } from './types';
 
+export const vehicleDetectionAvailable = false;
+
 /**
  * Public-source fallback.
  *
@@ -10,5 +12,8 @@ import type { EvidenceFrame, VehicleDetection } from './types';
  * source, license, checksum, input contract and output contract in docs/MODEL.md.
  */
 export async function detectVehiclesInFrames(_frames: EvidenceFrame[]): Promise<VehicleDetection[]> {
+  if (_frames.length) {
+    throw new Error('Model detekcije vozila nije uključen u ovu javnu verziju aplikacije.');
+  }
   return [];
 }

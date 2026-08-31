@@ -4,6 +4,14 @@ import type { NoiseSample } from '../analysis/types';
 import type { CaptureLocation } from '../analysis/sessionAnalysis';
 import type { Session } from '../models/session';
 import { RECORDINGS_DIRECTORY } from './sessionStorage';
+import { validateCopiedVideoSize, validateImportedVideo, videoExtension } from './videoFiles';
+
+let lastSessionTimestamp = 0;
+
+function nextSessionId() {
+  lastSessionTimestamp = Math.max(Date.now(), lastSessionTimestamp + 1);
+  return `${lastSessionTimestamp}`;
+}
 
 export async function readVideoDuration(uri: string): Promise<number> {
   const player = createVideoPlayer({ uri });
@@ -22,7 +30,12 @@ export async function readVideoDuration(uri: string): Promise<number> {
         if (timeout) clearTimeout(timeout);
         callback();
       };
-      sourceSubscription = player.addListener('sourceLoad', event => finish(() => resolve(event.duration)));
+      sourceSubscription = player.addListener('sourceLoad', event => {
+        const duration = event.duration;
+        finish(() => Number.isFinite(duration) && duration > 0
+          ? resolve(duration)
+          : reject(new Error('Video nema valjano trajanje.')));
+      });
       statusSubscription = player.addListener('statusChange', event => {
         if (event.status === 'error') finish(() => reject(new Error('Video nije moguće učitati.')));
       });
@@ -34,15 +47,16 @@ export async function readVideoDuration(uri: string): Promise<number> {
 }
 
 export async function persistImportedVideo(asset: { uri: string; name: string; size?: number }): Promise<Session> {
-  const extension = asset.name.match(/\.([a-z0-9]{2,5})$/i)?.[1]?.toLowerCase();
-  const safeExtension = extension && ['mp4', 'mov', 'm4v', '3gp'].includes(extension) ? extension : 'mp4';
+  validateImportedVideo(asset);
+  const safeExtension = videoExtension(asset.name);
   await FileSystem.makeDirectoryAsync(RECORDINGS_DIRECTORY, { intermediates: true });
-  const id = `${Date.now()}`;
+  const id = nextSessionId();
   const destination = `${RECORDINGS_DIRECTORY}session-${id}.${safeExtension}`;
   try {
     await FileSystem.copyAsync({ from: asset.uri, to: destination });
-    const durationSeconds = Math.max(1, Math.round(await readVideoDuration(destination)));
     const info = await FileSystem.getInfoAsync(destination);
+    validateCopiedVideoSize(info.exists ? info.size : asset.size);
+    const durationSeconds = Math.max(1, Math.round(await readVideoDuration(destination)));
     return { id, createdAt: new Date().toISOString(), durationSeconds, uri: destination, sizeBytes: info.exists ? info.size : asset.size, analysis: { status: 'queued', updatedAt: new Date().toISOString(), note: 'Čeka lokalnu analizu uvezene snimke.' } };
   } catch (error) {
     await FileSystem.deleteAsync(destination, { idempotent: true }).catch(() => undefined);
@@ -60,7 +74,7 @@ export async function persistCameraRecording(input: {
   location?: CaptureLocation;
 }): Promise<Session> {
   await FileSystem.makeDirectoryAsync(RECORDINGS_DIRECTORY, { intermediates: true });
-  const id = `${Date.now()}`;
+  const id = nextSessionId();
   const destination = `${RECORDINGS_DIRECTORY}session-${id}.mp4`;
   const audioDestination = `${RECORDINGS_DIRECTORY}session-${id}.m4a`;
   try {
